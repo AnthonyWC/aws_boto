@@ -1,0 +1,9 @@
+# Python 2.7.8
+# boto 2.38.0
+
+This is a python script that uses boto to automate AWS deployment; I did this for an interview assignment but also as a way for me to learn Python and AWS boto APIs.
+
+I ran this in Babun(Cygwin) on Windows 10 but it should work on any POSIX system (Mac/Linux), although sadly I haven't tried on those system.  Would have like to go with Vagrant for the future.  Anyway I think local account will most likley need to have root access as I made some system calls, particularly one to chmod 400 the ssh key file.  Since I recall AWS complained about that otherwise.
+
+Also I made some assumptions like saving the SSH key file to the /home/ folder (instead of say ~/.ssh folder), I assumed that the folder exists.  You will need to configure the .aws folder to have the proper IAM credential.  
+
