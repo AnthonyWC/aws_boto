@@ -7,38 +7,6 @@
 # Python 2.7.8
 # boto 2.38.0
 
-# ********** Configuration Constant **********
-#BOOLEAN_DRYRUN           = True
-BOOLEAN_DRYRUN           = False
-PROJECT_TAG              = "Stratus"
-ACCESS_KEY               = ""
-SECRET_KEY               = ""
-REGION_NAME              = "us-east-1"
-AVAIL_ZONE1              = REGION_NAME + 'b'
-AVAIL_ZONE2              = REGION_NAME + 'c'
-AMI_IMAGE                = "ami-60b6c60a"     #Amazon Linux AMI 2015.09.1 (HVM), SSD; us-east
-VPC_CIDR                 = "10.0.2.0/24"
-VPC_NAME                 = "New VPC"
-VPC_SUBNET1              = "10.0.2.0/25"
-VPC_SUBNET2              = "10.0.2.128/25"
-VPC_TENANCY              = "default"
-INSTANCE_SIZE            = "t2.micro"
-
-DEFAULT_USER             = "ec2-user"
-SG_PREFIX                = "Security Tag - Stratus"
-KEY_DIR                  = "/home/"
-KEY_NAME                 = "StratusKeypair.pem"
-# ********************
-
-'''
-# ********** User interactive **********
-print "Type CIDR block to use between /16 and /28.  E.G. 10.0.0.0/24, Press 'Enter' when finished"
-VPC_CIDR = raw_input()
-
-print "Type the Name for VPC (to use as Tag), Press 'Enter' when finished"
-VPC_NAME = raw_input()
-'''
-
 import boto
 import boto.rds2
 import os, subprocess, time
@@ -46,6 +14,43 @@ import os, subprocess, time
 from boto.manage.cmdshell import sshclient_from_instance
 from boto.vpc import VPCConnection
 vpcc = VPCConnection()
+
+
+# ********** Configuration Constant **********
+# BOOLEAN_DRYRUN           = True
+BOOLEAN_DRYRUN         = False
+PROJECT_TAG            = "Stratus"
+ACCESS_KEY             = ""
+SECRET_KEY             = ""
+REGION_NAME             = "us-east-1"
+AVAIL_ZONE1            = REGION_NAME + 'b'
+AVAIL_ZONE2            = REGION_NAME + 'c'
+AMI_IMAGE               = "ami-60b6c60a"
+# Linux AMI 2015.09.1 (HVM), SSD; us-east
+VPC_CIDR              = "10.0.2.0/24"
+VPC_NAME               = "New VPC"
+VPC_SUBNET1            = "10.0.2.0/25"
+VPC_SUBNET2            = "10.0.2.128/25"
+VPC_TENANCY            = "default"
+INSTANCE_SIZE          = "t2.micro"
+
+DEFAULT_USER           = "ec2-user"
+SG_PREFIX              = "Security Tag - Stratus"
+KEY_DIR                = "/home/"
+KEY_NAME               = "StratusKeypair.pem"
+# ********************
+
+'''
+# ********** User interactive **********
+print "Type CIDR block to use between /16 and /28.  E.G. 10.0.0.0/24,
+Press 'Enter' when finished"
+VPC_CIDR = raw_input()
+
+print "Type the Name for VPC (to use as Tag), Press 'Enter' when finished"
+VPC_NAME = raw_input()
+'''
+
+
 
 #boto.set_stream_logger("Stratus")
 print "Boto Version: ", boto.Version, "\n"
@@ -141,7 +146,7 @@ else:
     print "Subnet2 is successfully associated with Route Table.\n"
 
 try:
-    inet_gateway = vpc_connect.create_internet_gateway(dry_run = BOOLEAN_DRYRUN)
+    inet_gateway = vpc_connect.create_internet_gateway(dry_run=BOOLEAN_DRYRUN)
 except Exception as e:
     print "GW Create Alert: {}.\n".format(e.message)
 else:
@@ -150,19 +155,20 @@ else:
 try:
     vpc_connect.attach_internet_gateway(inet_gateway.id, aws_vpc_id)
 except Exception as e:
-   print "GW Attach Alert: {}.\n".format(e.message)
+    print "GW Attach Alert: {}.\n".format(e.message)
 else:
-   print "Attach GW to VPC: Success\n"
+    print "Attach GW to VPC: Success\n"
 
 # To-do: check for existing IGW to use as ID instead
 try:
-    inet_gw_route_status = vpc_connect.create_route(new_route_table.id,
-    destination_cidr_block = "0.0.0.0/0", gateway_id = inet_gateway.id,
-    dry_run = BOOLEAN_DRYRUN)
+    inet_gw_route_status = vpc_connect.create_route(
+        new_route_table.id, destination_cidr_block="0.0.0.0/0",
+        gateway_id=inet_gateway.id, dry_run=BOOLEAN_DRYRUN
+    )
 except Exception as e:
-   print "GW Route Alert: {}.\n".format(e.message)
+    print "GW Route Alert: {}.\n".format(e.message)
 else:
-   print "Default Internet Route for Gateway created: Success\n"
+    print "Default Internet Route for Gateway created: Success\n"
 
 exist_sec_group = ec2_connect.get_all_security_groups(filters=[("group-name", SG_PREFIX)])
 print "Exist SG: ", exist_sec_group
@@ -170,22 +176,23 @@ print "Exist SG: ", exist_sec_group
 if not len(exist_sec_group):
     try:
         sec_group = ec2_connect.create_security_group(
-        name = SG_PREFIX, description = "Security Group for " + PROJECT_TAG,
-        vpc_id = aws_vpc_id, dry_run = BOOLEAN_DRYRUN)
+            name=SG_PREFIX, description="Security Group for " + PROJECT_TAG,
+            vpc_id=aws_vpc_id, dry_run=BOOLEAN_DRYRUN
+        )
     except Exception as e:
         print "Alert: {}.\n".format(e.message)
     else:
         sec_group_id = sec_group.id
         print "SG ID: ", sec_group_id
         print "Security Group: {} created.\n".format(sec_group)
-        sec_group.authorize(ip_protocol = 'tcp', from_port = 22,
-        to_port = 22, cidr_ip = "0.0.0.0/0")
-        sec_group.authorize(ip_protocol = 'tcp', from_port = 80,
-        to_port = 80, cidr_ip = "0.0.0.0/0")
-        sec_group.authorize(ip_protocol = 'tcp', from_port = 443,
-        to_port = 443, cidr_ip = "0.0.0.0/0")
+        sec_group.authorize(
+            ip_protocol='tcp', from_port=22, to_port=22, cidr_ip="0.0.0.0/0")
+        sec_group.authorize(
+            ip_protocol='tcp', from_port=80, to_port=80, cidr_ip="0.0.0.0/0")
+        sec_group.authorize(
+            ip_protocol='tcp', from_port=443, to_port=443, cidr_ip="0.0.0.0/0")
 else:
-    # I can't find a way to get Security Group ID so have to delete & recreate; sad face becuase delete doesn't work
+    # I can't find a way to get Security Group ID so have to delete & recreate; becuase delete doesn't work
     # yet so have to create.  This will result in error later.
     sec_group_name = str(exist_sec_group.pop(0))[14:]
     print "Name to delete: ", sec_group_name
